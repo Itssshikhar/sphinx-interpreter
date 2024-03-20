@@ -24,6 +24,11 @@ type Program struct {
   Statements []Statement
 }
 
+type Boolean struct {
+  Token token.Token
+  Value bool
+}
+
 type LetStatement struct {
   Token token.Token
   Name *Identifier
@@ -58,6 +63,9 @@ type InfixExpression struct {
   Right Expression
 }
 
+func (b *Boolean) expressionNode() {}
+func (b *Boolean) TokenLiteral() string { return b.Token.Literal }
+func (b *Boolean) String() string { return b.Token.Literal }
 
 func (oe *InfixExpression) expressionNode() {}
 func (oe *InfixExpression) TokenLiteral() string { return oe.Token.Literal }
