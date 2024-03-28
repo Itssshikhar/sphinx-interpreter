@@ -1,14 +1,23 @@
 package repl
 
 import (
-  "bufio"
-  "fmt"
-  "io"
-  "sphinx/lexer"
-  "sphinx/token"
+	"bufio"
+	"fmt"
+	"io"
+	"sphinx/lexer"
+	"sphinx/parser"
 )
 
 const PROMPT = ">> "
+const SPHINX_FACE = `
+                   .~~~.
+                  /|6 6|\
+                 /O\_^_/O\
+                 \/'==='\/
+                 ,| |^| |.
+            ____(n(n)_(n)n)____
+            """""""""""""""""""
+`
 
 func Start(in io.Reader, out io.Writer) {
   scanner := bufio.NewScanner(in)
@@ -22,9 +31,24 @@ func Start(in io.Reader, out io.Writer) {
 
     line := scanner.Text()
     l := lexer.New(line)
+    p := parser.New(l)
 
-    for tok := l.NextToken(); tok.Type != token.EOF; tok = l.NextToken() {
-      fmt.Printf("%+v\n", tok)
+    program := p.ParseProgram()
+    if len(p.Errors()) != 0 {
+      printParserErrors(out, p.Errors())
+      continue
     }
+
+    io.WriteString(out, program.String())
+    io.WriteString(out, "\n")
+  }
+}
+
+func printParserErrors(out io.Writer, errors []string) {
+  io.WriteString(out, SPHINX_FACE)
+  io.WriteString(out, "Abey yrr! Kuch error aa gya! F***\n")
+  io.WriteString(out, " parser errors:\n")
+  for _, msg := range errors {
+    io.WriteString(out,"\t"+msg+"\n")
   }
 }
