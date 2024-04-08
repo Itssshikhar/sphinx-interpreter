@@ -1,7 +1,8 @@
 package object
 
 import (
-  "fmt"
+	"fmt"
+	"sphinx/ast"
 )
 
 type ObjectType string
@@ -12,6 +13,7 @@ const (
   NULL_OBJ = "NULL"
   RETURN_VALUE_OBJ = "RETURN_VALUE"
   ERROR_OBJ = "ERROR"
+  FUNCTION_OBJ = "FUNCTION"
 )
 
 type Object interface {
@@ -35,6 +37,12 @@ type ReturnValue struct {
 
 type Error struct {
   Message string
+}
+
+type Function struct {
+  Parameters []*ast.Identifier
+  Body *ast.BlockStatement
+  Env *Environment
 }
 
 func (i *Integer) Inspect() string { return fmt.Sprintf("%d", i.Value) }
