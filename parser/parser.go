@@ -16,7 +16,8 @@ const (
 	SUM         // +
 	PRODUCT     // *
 	PREFIX      // -X or !X
-	CALL        // myFunction(X)
+	CALL
+  INDEX       // myFunction(X). This is the highest precedence. Bottoms-Up
 )
 
 var precedences = map[token.TokenType]int{
@@ -29,6 +30,7 @@ var precedences = map[token.TokenType]int{
 	token.SLASH:    PRODUCT,
 	token.ASTERISK: PRODUCT,
 	token.LPAREN:   CALL,
+  token.LBRACKET: INDEX,
 }
 
 type (
@@ -77,11 +79,61 @@ func New(l *lexer.Lexer) *Parser {
 
 	p.registerInfix(token.LPAREN, p.parseCallExpression)
 
+  p.registerPrefix(token.LBRACKET, p.parseArrayLiteral)
+  p.registerInfix(token.LBRACKET, p.parseIndexExpression)
+
+  p.registerPrefix(token.LBRACE, p.parseHashLiteral)
+
 	// Read two tokens, so curToken and peekToken are both set
 	p.nextToken()
 	p.nextToken()
 
 	return p
+}
+
+func (p *Parser) parseIndexExpression(left ast.Expression) ast.Expression {
+  exp := &ast.IndexExpression{Token: p.curToken, Left: left}
+
+  p.nextToken()
+  exp.Index = p.parseExpression(LOWEST)
+
+  if !p.expectPeek(token.RBRACKET) {
+    return nil
+  }
+
+  return exp
+}
+
+func (p *Parser) parseArrayLiteral() ast.Expression {
+  array := &ast.ArrayLiteral{Token: p.curToken}
+
+  array.Elements = p.parseExpressionList(token.RBRACKET)
+
+  return array
+}
+
+func (p *Parser) parseExpressionList(end token.TokenType) []ast.Expression {
+  list := []ast.Expression{}
+  
+  if p.peekTokenIs(end) {
+    p.nextToken()
+    return list
+  }
+
+  p.nextToken()
+  list = append(list, p.parseExpression(LOWEST))
+
+  for p.peekTokenIs(token.COMMA) {
+    p.nextToken()
+    p.nextToken()
+    list = append(list, p.parseExpression(LOWEST))
+  }
+
+  if !p.expectPeek(end) {
+    return nil
+  }
+
+  return list
 }
 
 func (p *Parser) parseStringLiteral() ast.Expression {
@@ -399,7 +451,7 @@ func (p *Parser) parseFunctionParameters() []*ast.Identifier {
 
 func (p *Parser) parseCallExpression(function ast.Expression) ast.Expression {
 	exp := &ast.CallExpression{Token: p.curToken, Function: function}
-	exp.Arguments = p.parseCallArguments()
+	exp.Arguments = p.parseExpressionList(token.RPAREN)
 	return exp
 }
 
