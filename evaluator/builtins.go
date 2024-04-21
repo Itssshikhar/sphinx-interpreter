@@ -1,7 +1,8 @@
 package evaluator
 
 import (
-  "sphinx/object"
+	"fmt"
+	"sphinx/object"
 )
 
 var builtins = map[string]*object.Builtin{
@@ -17,7 +18,7 @@ var builtins = map[string]*object.Builtin{
       case *object.Array:
         return &object.Integer{Value: int64(len(arg.Elements))}
       default:
-        return newError("argumest to `len` not supported, got %s", args[0].Type())
+        return newError("argument to `len` not supported, got %s", args[0].Type())
       }
     },
   },
@@ -96,6 +97,16 @@ var builtins = map[string]*object.Builtin{
       copy(newArr, arr.Elements)
       newArr[length] = args[1]
       return &object.Array{Elements: newArr}
+    },
+  },
+
+  "puts": &object.Builtin{
+    Fn: func(args ...object.Object) object.Object {
+      for _, arg := range args {
+        fmt.Println(arg.Inspect())
+      }
+
+      return NULL
     },
   },
 }
